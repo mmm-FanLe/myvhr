@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mayao.mapper.HrMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.mayao.entity.Hr">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="phone" property="phone"/>
+        <result column="telephone" property="telephone"/>
+        <result column="address" property="address"/>
+        <result column="enabled" property="enabled"/>
+        <result column="username" property="username"/>
+        <result column="password" property="password"/>
+        <result column="userface" property="userface"/>
+        <result column="remark" property="remark"/>
+    </resultMap>
+
+    <resultMap id="hrWithRoles" type="hr" extends="BaseResultMap">
+        <collection property="roles" javaType="list" ofType="role">
+            <id column="rid" property="id"/>
+            <result column="rname" property="name"/>
+            <result column="rnameZh" property="nameZh"/>
+        </collection>
+    </resultMap>
+
+    <resultMap id="hrVoWithRoles" type="hrVo" extends="BaseResultMap">
+        <collection property="roles" javaType="list" ofType="role">
+            <id column="rid" property="id"/>
+            <result column="rname" property="name"/>
+            <result column="rnameZh" property="nameZh"/>
+        </collection>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id
+        , name, phone, telephone, address, enabled, username, password, userface, remark
+    </sql>
+
+    <select id="loadUserByUsername" resultMap="hrWithRoles" parameterType="String">
+        SELECT DISTINCT h.*, r.id as rid, r.`name` as rname, r.nameZh as rnameZh
+        from hr h
+                 LEFT JOIN hr_role hrr ON hrr.hrid = h.id
+                 LEFT JOIN role r ON hrr.rid = r.id
+        where username = #{username}
+    </select>
+
+    <select id="findHrByName" parameterType="String" resultType="hrVO">
+        select
+        <include refid="Base_Column_List"/>
+        from hr
+        <where>
+            <if test="keyword!=null and keyword != ''">
+                and name like concat('%',#{keyword},'%')
+            </if>
+        </where>
+
+    </select>
+
+    <select id="findAllHrExceptCurrentUser" parameterType="Integer" resultMap="hrVoWithRoles">
+        SELECT h.*, r.id as rid, r.`name` as rname, r.nameZh as rnameZh
+        FROM hr h
+                 LEFT JOIN hr_role hrr ON hrr.hrid = h.id
+                 LEFT JOIN role r on hrr.rid = r.id
+        WHERE h.id!=#{id}
+    </select>
+</mapper>

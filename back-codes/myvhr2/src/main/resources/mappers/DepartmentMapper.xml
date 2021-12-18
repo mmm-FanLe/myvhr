@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mayao.mapper.DepartmentMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.mayao.entity.Department">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="parentId" property="parentId"/>
+        <result column="depPath" property="depPath"/>
+        <result column="enabled" property="enabled"/>
+        <result column="isParent" property="isParent"/>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id
+        , name, parentId, depPath, enabled, isParent
+    </sql>
+
+    <!--递归查询-->
+    <resultMap id="treeDep" type="department" extends="BaseResultMap">
+        <collection property="children" javaType="list" ofType="department"
+                    select="com.mayao.mapper.DepartmentMapper.getTreeDepartment" column="id"/>
+    </resultMap>
+
+    <select id="getTreeDepartment" parameterType="Integer" resultMap="treeDep">
+        select
+        <include refid="Base_Column_List"/>
+        from department where parentId=#{parentId}
+    </select>
+
+</mapper>
