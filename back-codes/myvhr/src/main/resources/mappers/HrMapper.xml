@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mayao.mapper.HrMapper">
+
+    <resultMap id="hrMap" type="hr">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="name" property="name" jdbcType="VARCHAR"/>
+        <result column="phone" property="phone" jdbcType="CHAR"/>
+        <result column="telephone" property="telephone" jdbcType="VARCHAR"/>
+        <result column="address" property="address" jdbcType="VARCHAR"/>
+        <result column="enabled" property="enabled" jdbcType="BIT"/>
+        <result column="username" property="username" jdbcType="VARCHAR"/>
+        <result column="password" property="password" jdbcType="VARCHAR"/>
+        <result column="userface" property="userface" jdbcType="VARCHAR"/>
+        <result column="remark" property="remark" jdbcType="VARCHAR"/>
+
+        <collection property="roles" column="id" select="com.mayao.mapper.RoleMapper.selectRolesByHrId"/>
+    </resultMap>
+
+    <resultMap id="hrVOMap" type="hrVO">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="name" property="name" jdbcType="VARCHAR"/>
+        <result column="phone" property="phone" jdbcType="CHAR"/>
+        <result column="telephone" property="telephone" jdbcType="VARCHAR"/>
+        <result column="address" property="address" jdbcType="VARCHAR"/>
+        <result column="enabled" property="enabled" jdbcType="BIT"/>
+        <result column="username" property="username" jdbcType="VARCHAR"/>
+        <result column="password" property="password" jdbcType="VARCHAR"/>
+        <result column="userface" property="userface" jdbcType="VARCHAR"/>
+        <result column="remark" property="remark" jdbcType="VARCHAR"/>
+
+        <!--
+            一对多
+            ? 如果这里使用以下方法,集合中会重复出现.有多少个角色就会重复出现该用户多少次
+            ! <collection property="roles" column="id" select="com.mayao.mapper.RoleMapper.selectRolesByHrId"/>
+        -->
+        <collection property="roles" ofType="role" javaType="list">
+            <id column="rid" property="id"/>
+            <result column="rName" property="name"/>
+            <result column="rNameZh" property="nameZh"/>
+        </collection>
+    </resultMap>
+
+
+    <select id="loadUserByUsername" parameterType="String" resultMap="hrMap">
+        select *
+        from hr
+        where username = #{username}
+    </select>
+
+    <select id="getAllHrs" parameterType="Integer" resultMap="hrVOMap">
+        SELECT distinct h.id,
+                        h.name,
+                        h.phone,
+                        h.telephone,
+                        h.address,
+                        h.enabled,
+                        h.username,
+                        h.password,
+                        h.userface,
+                        h.remark,
+                        r.id     as rid,
+                        r.`name` as rname,
+                        r.nameZh as rNameZh
+        from hr h
+                 LEFT JOIN hr_role hrr ON hrr.hrid = h.id
+                 LEFT JOIN role r ON hrr.rid = r.id
+        where h.id != #{hrId}
+        order by h.id
+    </select>
+
+    <select id="getAllHrsByKeyword" resultMap="hrVOMap">
+        SELECT distinct h.id,
+                        h.name,
+                        h.phone,
+                        h.telephone,
+                        h.address,
+                        h.enabled,
+                        h.username,
+                        h.password,
+                        h.userface,
+                        h.remark,
+                        r.id     as rid,
+                        r.`name` as rname,
+                        r.nameZh as rNameZh
+        from hr h
+                 LEFT JOIN hr_role hrr ON hrr.hrid = h.id
+                 LEFT JOIN role r ON hrr.rid = r.id
+        where h.name like concat('%',#{keyword},'%')
+        order by h.id
+    </select>
+
+    <update id="updateHr" parameterType="hr">
+        update hr set phone=#{phone},
+        telephone=#{telephone},address=#{address},
+        enabled=#{enabled},
+        username=#{username},password=#{password},
+        userface=#{userface},remark=#{remark}
+        where id=#{id}
+    </update>
+</mapper>

@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mayao.mapper.MenuMapper">
+
+    <resultMap id="BaseResultMap" type="Menu">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="url" property="url" jdbcType="VARCHAR"/>
+        <result column="path" property="path" jdbcType="VARCHAR"/>
+        <result column="component" property="component" jdbcType="VARCHAR"/>
+        <result column="name" property="name" jdbcType="VARCHAR"/>
+        <result column="iconCls" property="iconCls" jdbcType="VARCHAR"/>
+        <result column="parentId" property="parentId" jdbcType="INTEGER"/>
+        <result column="enabled" property="enabled" jdbcType="BIT"/>
+        <result column="keepAlive" property="keepAlive"/>
+        <result column="requireAuth" property="requireAuth"/>
+    </resultMap>
+
+    <resultMap id="BaseResultMap2" type="MenuVO" extends="BaseResultMap">
+        <collection property="children" ofType="MenuVO">
+            <id column="id2" property="id" jdbcType="INTEGER"/>
+            <result column="url2" property="url" jdbcType="VARCHAR"/>
+            <result column="path2" property="path" jdbcType="VARCHAR"/>
+            <result column="component2" property="component" jdbcType="VARCHAR"/>
+            <result column="name2" property="name" jdbcType="VARCHAR"/>
+            <result column="iconCls2" property="iconCls" jdbcType="VARCHAR"/>
+            <result column="parentId2" property="parentId" jdbcType="INTEGER"/>
+            <result column="enabled2" property="enabled" jdbcType="BIT"/>
+            <result column="keepAlive2" property="keepAlive"/>
+            <result column="requireAuth2" property="requireAuth"/>
+        </collection>
+    </resultMap>
+
+    <resultMap id="menusWithRole" type="MenuVO2" extends="BaseResultMap">
+        <!--没有映射children-->
+        <collection property="roles" ofType="role">
+            <id column="rid" property="id"/>
+            <result column="rname" property="name"/>
+            <result column="rnameZh" property="nameZh"/>
+        </collection>
+    </resultMap>
+
+    <!--Tree形Menu-->
+    <resultMap id="menuTree" type="MenuVO">
+        <id column="id1" property="id"/>
+        <result column="name1" property="name"/>
+        <collection property="children" ofType="MenuVO">
+            <id column="id2" property="id"/>
+            <result column="name2" property="name"/>
+            <collection property="children" ofType="MenuVo">
+                <id column="id3" property="id"/>
+                <result column="name3" property="name"/>
+            </collection>
+        </collection>
+    </resultMap>
+
+
+    <select id="getAllMenusWithRole" resultMap="menusWithRole">
+        SELECT m.*, r.id as rid, r.`name` as rname, r.nameZh as rnameZh
+        from menu m
+                 INNER JOIN menu_role mr ON mr.mid = m.id
+                 INNER JOIN role r ON mr.rid = r.id
+        ORDER BY m.id
+    </select>
+    <!--
+        ! mr.mid = m2.id
+        ? 为什么这里只能选择m2.id而不能选择m1.id？
+        因为menu_role表中的mid字段存储的是一级导航下面的下级导航
+        并且m1.id = m2.parentId这个条件已经将两个表自然连接了，
+        若果找的是m1.id则只能找到下级导航，而找不到一级导航
+    -->
+    <select id="getMenusByHrId" parameterType="Integer" resultMap="BaseResultMap2">
+        SELECT DISTINCT m1.*,
+                        m2.id          as id2,
+                        m2.`name`      as name2,
+                        m2.component   as component2,
+                        m2.enabled     as enable2,
+                        m2.iconCls     as iconCls2,
+                        m2.keepAlive   as keepAlive2,
+                        m2.parentId    as parentId2,
+                        m2.requireAuth as requireAuth2,
+                        m2.path        as path2
+        from menu m1,
+             menu m2,
+             hr_role hrr,
+             menu_role mr
+        where m1.id = m2.parentId
+          and hrr.hrid = #{id}
+          and hrr.rid = mr.rid
+          and mr.mid = m2.id
+          AND m2.enabled = true
+        ORDER BY m1.id;
+    </select>
+
+    <!--查询菜单的树形结构-->
+    <select id="FindAllMenus" resultMap="menuTree">
+        SELECT m1.id id1, m1.`name` name1, m2.id id2, m2.`name` name2, m3.id id3, m3.`name` name3
+        from menu m1,
+             menu m2,
+             menu m3
+        where m1.id = m2.parentId
+          and m2.id = m3.parentId
+          and m3.enabled = TRUE
+    </select>
+</mapper>
